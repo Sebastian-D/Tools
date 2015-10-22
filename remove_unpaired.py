@@ -32,7 +32,7 @@ while True:
 	else:
 		output.write(line1)
 
-#Check two lines against eachother, if they match write them as a pair and jump to the next two lines. If they dont write
+#Check two lines against eachother, if they match write them as a pair and jump to the next two lines. If they dont match; write
 #the first line as a single and iterate only one step looking at the next pair
 while True:
 	#read in second line first (we already have line1 from reading the header)
