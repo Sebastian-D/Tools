@@ -13,3 +13,6 @@ Create a COSMIC file from any version of their database such as exists in the GA
 #### mergeConvertCpGReport.r
 Merge Single-end and Paired-end aligned bismark_methylation_extractor Cytosine reports. (*.CpG_report.txt). Optional conversion to [methylKit](https://github.com/al2na/methylKit) input format.
 Useful for when you had a low mapping efficiency and want as much aligned content as possible.
+
+#### CpG_report2methylKit.r
+Convert a single CpG report (cytosine report) to methylKit input format.
