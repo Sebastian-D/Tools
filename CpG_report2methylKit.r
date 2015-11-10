@@ -11,7 +11,6 @@ arg <- commandArgs(trailingOnly = TRUE)
 
 #Load file
 file1 <- read.table(arg[1],colClasses = c("character","integer","character","integer","integer","character","character"))
-#file1 <- read.table("BRNO1003.merged.dedupped.picard_sort.CpG_report.txt",colClasses = c("character","integer","character","integer","integer","character","character"))
 
 #Set column names
 colnames(file1) <- c("chr","pos","strand","count_methylated","count_unmethylated","C-context","trinucleotide-context")
@@ -49,14 +48,11 @@ file1$chrBase <- paste(file1$chr,file1$pos,sep=".")
 file1 <- file1[,c(7,1,2,3,4,5,6)]
 
 #Get a good sample name
-tmp_name <- unlist(strsplit(arg[1],"[.]"))
-tmp_name2 <- unlist(strsplit(tmp_name[1],"/"))
+tmp_name <- unlist(strsplit(arg[1],"/"))
+tmp_name2 <- unlist(strsplit(tmp_name[length(tmp_name)],"[.]"))
 rm(tmp_name)
 
-write.table(file1,file=paste(tmp_name2[length(tmp_name2)],".methylKit_input.txt",sep=""),quote=F,sep="\t",row.names=F,col.names=F)
+write.table(file1,file=paste(tmp_name2[1],".methylKit_input.txt",sep=""),quote=F,sep="\t",row.names=F,col.names=F)
 
 #cleanup and save image just incase
-save.image(paste(tmp_name2[length(tmp_name2)],".methylkitConverted.Rdata",sep=""))
-
-write.table(file1,file="BRNO1003.methylKit_input.txt")
-save.image()
+save.image(paste(tmp_name2[1],".methylkitConverted.Rdata",sep=""))

@@ -63,15 +63,15 @@ merged <- merged[,c(1,2,3,6,7,4,5)]
 merged <- merged[with(merged,order(chr,pos)), ]
 
 #Get a good sample name
-tmp_name <- unlist(strsplit(arg[1],"[.]"))
-tmp_name2 <- unlist(strsplit(tmp_name[1],"/"))
+tmp_name <- unlist(strsplit(arg[1],"/"))
+tmp_name2 <- unlist(strsplit(tmp_name[length(tmp_name)],"[.]"))
 rm(tmp_name)
 
 #Output the merged file
-write.table(merged,file=paste(tmp_name2[length(tmp_name2)],".Merged.CpG_report.txt",sep=""),quote=F,sep="\t",row.names=F,col.names=F)
+write.table(merged,file=paste(tmp_name2[1],".Merged.CpG_report.txt",sep=""),quote=F,sep="\t",row.names=F,col.names=F)
 
 #cleanup and save image just incase
-save.image(paste(tmp_name2[length(tmp_name2)],".Merged.Rdata",sep=""))
+save.image(paste(tmp_name2[1],".Merged.Rdata",sep=""))
 
 ## If we want to convert the format to methylKit
 if (arg[4]=="-methylkit=T" | arg[4]=="-methylkit=TRUE"){
@@ -106,10 +106,10 @@ if (arg[4]=="-methylkit=T" | arg[4]=="-methylkit=TRUE"){
 	merged <- merged[,c(7,1,2,3,4,5,6)]
 
 	#Save output to file
-	write.table(merged,file=paste(tmp_name2[length(tmp_name2)],".MergedAndConverted.CpG_report.txt",sep=""),quote=F,sep="\t",row.names=F,col.names=F)
+	write.table(merged,file=paste(tmp_name2[1],".MergedAndConverted.CpG_report.txt",sep=""),quote=F,sep="\t",row.names=F,col.names=F)
 
 	#cleanup and save image just incase
-	save.image(paste(tmp_name2[length(tmp_name2)],".MergedAndConverted.Rdata",sep=""))
+	save.image(paste(tmp_name2[1],".MergedAndConverted.Rdata",sep=""))
 } else {
 	cat("Not methylkit converted.\n")
 }
