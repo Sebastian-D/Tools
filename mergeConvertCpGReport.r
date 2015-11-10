@@ -1,4 +1,4 @@
-# Description
+# Description: Merge the cytosin_reports of bismark_methylation_extractor from PE and SE aligned reads. Optionally convert input format to methylKit.
 
 # Usage: Rscript merge_CpGreport.r -help SE1.CpG_report.txt SE2.CpG_report.txt PE.CpG_report.txt -methylkit=T/F 
 
@@ -28,11 +28,6 @@ cat("Reading files.\n")
 file1 <- read.table(arg[1],colClasses = c("character","integer","character","integer","integer","character","character"))
 file2 <- read.table(arg[2],colClasses = c("character","integer","character","integer","integer","character","character"))
 file3 <- read.table(arg[3],colClasses = c("character","integer","character","integer","integer","character","character"))
-
-#During development
-#file1 <- read.table("PE/7_P1997_1001_1.fastq.fq.picard_sort.merge.dedupped.picard_sort.deduplicated.CpG_report.txt",colClasses = c("character","integer","character","integer","integer","character","character"))
-#file2 <- read.table("SE/7_P1997_1001_1.fastq.fq.bam_unmapped_reads_1.merge.markDup.deduplicated.picard_sort.CpG_report.txt",colClasses = c("character","integer","character","integer","integer","character","character"))
-#file3 <- read.table("SE/8_P1997_1001_1.fastq.fq.bam_unmapped_reads_1.merge.markDup.deduplicated.picard_sort.CpG_report.txt",colClasses = c("character","integer","character","integer","integer","character","character"))
 
 #Set column names
 colnames(file1) <- c("chr","pos","strand","count_methylated","count_unmethylated","C-context","trinucleotide-context")
@@ -91,12 +86,15 @@ if (arg[4]=="-methylkit=T" | arg[4]=="-methylkit=TRUE"){
 	merged$strand[merged$strand=="+"] <- "F"
 
 	#Insert chr infront of all chromosome numbers
-	merged$chr <- sub("^","chr",merged$chr)
+	#Check if "chr" already there, if not, insert it NEEDS WORK
+	if (!any(grep("chr",merged$chr[1])))
+	{
+		merged$chr <- sub("^","chr",merged$chr)
+	}
 
 	#Create freqC and freqT
 	merged$freqC <- (merged$tot_count_methylated / merged$tot_coverage) * 100
 	merged$freqT <- (merged$tot_count_unmethylated / merged$tot_coverage) * 100
-	#Remember to check if this looks good before deleting first time!
 
 	#Drop tot_counts
 	merged <- merged[ , -which(names(merged) %in% c("tot_count_methylated","tot_count_unmethylated","C-context","trinucleotide-context"))]
