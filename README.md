@@ -22,11 +22,11 @@ Produce coverage plots of methylation data.
 
 Usage: `Rscript CpG_island_coverage_histograms.r methylRawObject.Rdata Hsapien_CpG_islands_hg19.txt`
 
-The Hsapien_CpG_islands_hg19.txt can be downloaded from here. Any file with same format will work.
-How to create the methylrawobject, which must be named myobj:
+The Hsapien_CpG_islands_hg19.txt can be downloaded from this repository. Any file with same format will work.
+To create the methylrawobject, which must be named myobj, use methylKit, see example and [methylKit](https://github.com/al2na/methylKit) if necessary.
 ```R
 library(methylKit)
-myobj=read(<arguments>)
+myobj=read(<file list>)
 save(myobj,file="methylRawObject.Rdata")
 ```
 
