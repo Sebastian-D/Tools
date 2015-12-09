@@ -16,3 +16,18 @@ Useful for when you had a low mapping efficiency and want as much aligned conten
 
 #### CpG_report2methylKit.r
 Convert a single CpG report (cytosine report) to methylKit input format.
+
+#### CpG_island_coverage_histogram.r
+Produce coverage plots of methylation data.
+
+Usage: `Rscript CpG_island_coverage_histograms.r methylRawObject.Rdata Hsapien_CpG_islands_hg19.txt`
+
+The Hsapien_CpG_islands_hg19.txt can be downloaded from here. Any file with same format will work.
+How to create the methylrawobject, which must be named myobj:
+```R
+library(methylKit)
+myobj=read(<arguments>)
+save(myobj,file="methylRawObject.Rdata")
+```
+
+
