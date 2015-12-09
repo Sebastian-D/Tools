@@ -18,7 +18,7 @@ Useful for when you had a low mapping efficiency and want as much aligned conten
 Convert a single CpG report (cytosine report) to methylKit input format.
 
 #### CpG_island_coverage_histogram.r
-Produce coverage plots of methylation data.
+Produce coverage plots of methylation data in CpG island regions.
 
 Usage: `Rscript CpG_island_coverage_histograms.r methylRawObject.Rdata Hsapien_CpG_islands_hg19.txt`
 
