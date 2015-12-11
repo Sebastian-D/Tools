@@ -17,17 +17,29 @@ Useful for when you had a low mapping efficiency and want as much aligned conten
 #### CpG_report2methylKit.r
 Convert a single CpG report (cytosine report) to methylKit input format.
 
-#### CpG_island_coverage_histogram.r
-Produce coverage plots of methylation data in CpG island regions.
+#### Coverage_in_regions_histogram.r
+Produce a coverage histogram in any regions. For example CpG island regions.
 
-Usage: `Rscript CpG_island_coverage_histograms.r methylRawObject.Rdata Hsapien_CpG_islands_hg19.txt`
+Usage: `Rscript Coverage_in_regions_histogram.r input.txt Hsapien_CpG_islands_hg19.txt`
 
-The Hsapien_CpG_islands_hg19.txt can be downloaded from this repository. Any file with same format will work.
-To create the methylrawobject, which must be named myobj, use methylKit, see example and [methylKit](https://github.com/al2na/methylKit) if necessary.
-```R
-library(methylKit)
-myobj=read(<file list>)
-save(myobj,file="methylRawObject.Rdata")
+The region file should be tab separated chromosome, start, end.
+Example:
 ```
+chr     start   end
+chr1    84934572        84935054
+chr1    63176547        63177427
+chr1    125435174       125435976
+```
+
+The CpG island regions for Hsapien and Mmusculus can be downloaded from this repository.
+The input file should be tab separated chromosome, position, coverage.
+Example:
+```
+chr1    3000827 8
+chr1    3001007 5
+chr1    3001008 3
+```
+
+Output is a density histogram of coverage.
 
 
