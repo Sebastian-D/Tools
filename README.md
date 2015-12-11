@@ -41,5 +41,5 @@ chr1    3001008 3
 ```
 
 Output is a density histogram of coverage.
-![Alt text](https://github.com/Sebastian-D/Tools/test.txt.Coverage.png "Example density coverage histogram")
+![Alt text](../test.txt.Coverage.png "Example density coverage histogram")
 
