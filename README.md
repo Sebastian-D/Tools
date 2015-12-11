@@ -22,7 +22,7 @@ Produce a coverage histogram in any regions. For example CpG island regions.
 
 Usage: `Rscript Coverage_in_regions_histogram.r input.txt Hsapien_CpG_islands_hg19.txt`
 
-The region file should be tab separated chromosome, start, end.
+The region file should be tab separated file with columns chromosome, start, end.
 Example:
 ```
 chr     start   end
@@ -32,7 +32,7 @@ chr1    125435174       125435976
 ```
 
 The CpG island regions for Hsapien and Mmusculus can be downloaded from this repository.
-The input file should be tab separated chromosome, position, coverage.
+The input file should be tab separated file with columns chromosome, position, coverage.
 Example:
 ```
 chr1    3000827 8
@@ -41,5 +41,5 @@ chr1    3001008 3
 ```
 
 Output is a density histogram of coverage.
-
+![Alt text](https://github.com/Sebastian-D/Tools/test.txt.Coverage.png "Example density coverage histogram")
 
