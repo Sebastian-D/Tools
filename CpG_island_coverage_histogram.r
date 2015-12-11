@@ -1,4 +1,4 @@
-#Description: Produce CpG island coverage histogram.
+#Description: Produce CpG island coverage histogram. (made for CpG islands from the start, thus all the specific naming)
 #
 #Usage: Rscript CpG_island_coverage_histograms.r Input.txt Hsapien_CpG_islands_hg19.txt
 #
@@ -7,6 +7,12 @@
 #Date: 19/11/2015
 #
 #Input.txt should be a tab separated file with columns chromosome, position, coverage
+#example:
+#chr1    3000827 8
+#chr1    3001007 5
+#chr1    3001008 3
+#
+#Requires: Rcpp
 
 library(Rcpp)
 
@@ -29,6 +35,10 @@ wd <- getwd()
 name <- strsplit(arg[1],"/")
 name <- name[[1]][length(name[[1]])]
 cat("Starting work on ",name,"\n")
+
+#Get region name
+region_name <- strsplit(arg[2],"/")
+region_name <- region_name[[1]][length(region_name[[1]])]
 
 #Create Rcpp function
 cppFunction('NumericVector CpG_index(NumericVector POS, NumericVector START, NumericVector END) {
@@ -118,7 +128,7 @@ setwd(wd)
 cat("Plotting", name, "\n")
 
 png(paste(name,'.Coverage.png',sep=''),width=1680,height=1050)
-        hist(COV ,main=paste("Coverage density of ",name," in CpG islands",sep=""),xlab="Coverage",ylab="Density",
+        hist(COV ,main=paste("Coverage density of ",name," in regions from ", region_name,sep=""),xlab="Coverage",ylab="Density",
                 col="olivedrab3",labels=TRUE,freq=FALSE,breaks=200,xlim=c(1,60),ylim=c(0,0.10),las=1)
 axis(side=1,at=seq(0,60,5))
 
