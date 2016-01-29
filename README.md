@@ -1,6 +1,9 @@
 # Tools
 I thought maybe I should commit some of my more useful tools to git for easier future access (and the good of my fellow man?)
 
+#### NGS pipeline
+In the NGS_pipeline folder is a NGS pipeline for DNA data that I created in bpipe.
+
 #### remove_unpaired.py
 For the special case of having a SAM/BAM file with a mix of paired-end and single-end reads where the single-end reads dont have the correct flags for easy SAMTOOLS removal. This file separates the reads into two files.
 
