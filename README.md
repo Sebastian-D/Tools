@@ -28,7 +28,7 @@ Usage: `Rscript Coverage_in_regions_histogram.r input.txt Hsapien_CpG_islands_hg
 The region file should be tab separated file with columns chromosome, start, end.
 Example:
 ```
-chr     start   end
+chr     start           end
 chr1    84934572        84935054
 chr1    63176547        63177427
 chr1    125435174       125435976
