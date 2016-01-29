@@ -6,10 +6,10 @@ This pipeline handles whole-genome sequencing DNA data and exome data.
 
 ####Installation & guide
 
-1.Install Bpipe.
-2.Download NGSpipe.pipe.
-3.Edit NGSpipe.pipe with your own constants such as indel/dbsnp files and paths to the required programs.
-4.Edit the runcommand so the pattern matches your files. At the moment it is L00%_R*.fastq.gz which will match a typical sample with one to a couple of lines in the format:
+1. Install Bpipe.
+2. Download NGSpipe.pipe.
+3. Edit NGSpipe.pipe with your own constants such as indel/dbsnp files and paths to the required programs.
+4. Edit the runcommand so the pattern matches your files. At the moment it is L00%_R*.fastq.gz which will match a typical sample with one to a couple of lines in the format:
 ```
 samplename_L001_R1.fastq.gz
 samplename_L001_R2.fastq.gz
