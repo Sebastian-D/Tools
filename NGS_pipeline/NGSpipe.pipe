@@ -1,0 +1,494 @@
+//    _   _    ____   ____      ____    _                  _   _                
+//   | \ | |  / ___| / ___|    |  _ \  (_)  _ __     ___  | | (_)  _ __     ___ 
+//   |  \| | | |  _  \___ \    | |_) | | | | '_ \   / _ \ | | | | | '_ \   / _ \
+//   | |\  | | |_| |  ___) |   |  __/  | | | |_) | |  __/ | | | | | | | | |  __/
+//   |_| \_|  \____| |____/    |_|     |_| | .__/   \___| |_| |_| |_| |_|  \___|
+//                                         |_|                                  
+// By: Sebastian DiLorenzo
+// sebastian.dilorenzo@bils.se
+// Last update: 29/1-2016. While not completely finished, in a working state.
+
+about title: "Configurable modular NGS pipeline"
+
+//To run:
+//	Change the constants to suit you.
+//	Make sure you have FastQC and cutadapt modules loaded OR installed so that they are in PATH.
+//  It is recommended to run the pipeline from an empty working directory for each sample.
+
+//Execute $bpipe run NGSpipe.pipe <paired-end.fastq.gz files>
+
+
+//     ____    ___    _   _   ____    _____      _      _   _   _____   ____  
+//    / ___|  / _ \  | \ | | / ___|  |_   _|    / \    | \ | | |_   _| / ___| 
+//   | |     | | | | |  \| | \___ \    | |     / _ \   |  \| |   | |   \___ \ 
+//   | |___  | |_| | | |\  |  ___) |   | |    / ___ \  | |\  |   | |    ___) |
+//    \____|  \___/  |_| \_| |____/    |_|   /_/   \_\ |_| \_|   |_|   |____/ 
+// 
+
+//---Paths to software
+PICARD="/sw/apps/bioinfo/picard/2.0.1/milou/picard.jar"
+BWA="/sw/apps/bioinfo/bwa/0.7.8/milou/bin/bwa"
+SAMTOOLS="/sw/apps/bioinfo/samtools/1.3/milou/bin/samtools"
+GATK="/pica/sw/apps/bioinfo/GATK/3.5.0"
+
+
+//---pre-processing and trimming
+//Note: To let trimGalore determine adapters, leave the variable empty (ex ADAPTER1=""). Do not comment out!
+//Adapters: https://cutadapt.readthedocs.org/en/latest/guide.html#illumina-truseq
+//ADAPTER1=""
+//ADAPTER2=""
+ADAPTER1="AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC"
+ADAPTER2="AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT"
+//CUTADAPT="/sw/apps/bioinfo/cutadapt/1.5.0/milou/bin/cutadapt"
+
+//Note: trim_galore requires FastQC and cutadapt to function.
+//On UPPMAX:
+//module load FastQC/0.11.2
+//module load cutadapt/1.8.0
+TRIMGALORE="/sw/apps/bioinfo/TrimGalore/0.4.0/milou/trim_galore"
+
+
+//---Files
+//Ref prep information: http://gatkforums.broadinstitute.org/discussion/2798/howto-prepare-a-reference-for-use-with-bwa-and-gatk
+REF="/gulo/glob/seba/Apps/GenomeAnalysisTK/2.8/hg19/ucsc.hg19.fasta"
+
+//Note:If no target intervals exist, leave the variable empty (ex TARGETS=""). Do not comment out!
+//http://gatkforums.broadinstitute.org/discussion/1204/what-input-files-does-the-gatk-accept
+//Target regions supplied by sequencing facility. Should be in format: chr:start-stop
+//Note: can also be given as "chr1", ex TARGETS="chr1" (Not tested!)
+TARGETS="/pica/v8/b2013219_nobackup/7Genes/TSCA.intervals" //Optional
+
+//Note:If no validation files exist, leave the variable empty (ex DBSNP=""). Do not comment out!
+//Note:Indels and SNPS are semi-optional, but it is recommended to at least include dbsnp and one indel vcf. If none of the three are included the pipeline will fail.
+//Intervals list, see https://www.broadinstitute.org/gatk/guide/tagged?tag=intervals
+INDELS1KG="/gulo/glob/seba/Apps/GenomeAnalysisTK/2.8/hg19/1000G_phase1.indels.hg19.sites.vcf"
+INDELSMILLS="/gulo/glob/seba/Apps/GenomeAnalysisTK/2.8/hg19/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf"
+DBSNP="/gulo/glob/seba/Apps/GenomeAnalysisTK/2.8/hg19/dbsnp_138.hg19.vcf"
+
+
+//---Hardware and Sample variables
+//The number of cores available. If running on a UPPMAX node you have 16 cores and 16*8=128GB RAM
+//IMPORTANT: Set to 1 or keep it divisible by LANES
+CORES="1"
+//The amount of memory to be used in whole GB.
+//IMPORTANT: Keep it divisible by LANES
+RAM="8"
+//Lanes is the number of lanes delivered from the sequencing platform. A higher number of lanes gives more parallel tasks pre-merge.
+//For example three lanes paired end data can look like L1_R1.fq, L1_R2.fq, L2_R1.fq, L2_R2.fq, L3_R1.fq, L3_R2.fq
+//So if you have 3 lanes and 9 cores the multithreading should use 9/3=3 cores each. (make sure it divides evenly)
+LANES="4"
+
+
+//--Other variables
+//The name of the platform it was run on, for read group addition
+PLATFORM="illumina"
+//The phredscore format of your data. phred33 or phred64.
+PHRED="phred33"
+//Should duplicates be removed or not? true/false
+REMOVE_DUPLICATES="false"
+
+
+//Create correct file variables. Do not touch unless you know what you are doing!
+if(INDELS1KG?.trim()){
+	INDELS1KG_1="-known " + INDELS1KG + " "
+	INDELS1KG_2="-knownSites " + INDELS1KG + " "
+} else {
+	INDELS1KG_1=""
+	INDELS1KG_2=""
+}
+
+if(INDELSMILLS?.trim()){
+	INDELSMILLS_1="-known " + INDELSMILLS + " "
+	INDELSMILLS_2="-knownSites " + INDELSMILLS + " "
+} else {
+	INDELSMILLS_1=""
+	INDELSMILLS_2=""
+}
+
+if(DBSNP?.trim()){
+	DBSNP_1="-knownSites " + DBSNP + " "
+} else {
+	DBSNP_1=""
+}
+
+if(TARGETS?.trim()){
+	TARGETS_1="-L " + TARGETS + " "
+} else {
+	TARGETS_1=""
+}
+
+if(ADAPTER1?.trim()){
+	ADAPTER_1=" --adapter " + ADAPTER1 + " "
+	ADAPTER_2=" --adapter2 " + ADAPTER2 + " "
+} else {
+	ADAPTER_1=""
+	ADAPTER_2=""
+}
+if(PHRED.contains("64")){
+	PHRED64="--fix_misencoded_quality_scores "
+} else {
+	PHRED64=""
+}
+
+//    _____   _   _   _   _    ____   _____   ___    ___    _   _   ____  
+//   |  ___| | | | | | \ | |  / ___| |_   _| |_ _|  / _ \  | \ | | / ___| 
+//   | |_    | | | | |  \| | | |       | |    | |  | | | | |  \| | \___ \ 
+//   |  _|   | |_| | | |\  | | |___    | |    | |  | |_| | | |\  |  ___) |
+//   |_|      \___/  |_| \_|  \____|   |_|   |___|  \___/  |_| \_| |____/ 
+//  
+
+// Functions to get sample name and id.
+def get_id(filename) {
+    info = filename.split("/")[-1].split("\\.")[0].split("_")
+    id = info[1]
+    return(id)
+}
+
+def get_sample(filename) {
+    info = filename.split("/")[-1].split("\\.")[0].split("_")
+    sample = info[0]
+    return(sample)
+}
+
+def get_lane(filename) {
+    info = filename.split("/")[-1].split("\\.")[0].split("_")
+    lane = info[2]
+    return(lane)
+}
+
+//    __  __    ___    ____    _   _   _       _____   ____  
+//   |  \/  |  / _ \  |  _ \  | | | | | |     | ____| / ___| 
+//   | |\/| | | | | | | | | | | | | | | |     |  _|   \___ \ 
+//   | |  | | | |_| | | |_| | | |_| | | |___  | |___   ___) |
+//   |_|  |_|  \___/  |____/   \___/  |_____| |_____| |____/ 
+//  
+
+trimGalore = {
+	transform("fq.gz","fq.gz"){
+	doc title: "trimGalore",
+	desc: """Removes adapters and trims by quality score and length post adapter removal.""",
+	constraints: """Must load modules: cutadapt and FastQC.
+	Phred qualityscore must be supplied. Default is phred33.
+	Must be paired-end (R1.fastq, R2.fastq).""",
+	author: "sebastian.dilorenzo@bils.se"
+
+	exec """
+	$TRIMGALORE -q 20 --paired --fastqc --length 20 --stringency 5$ADAPTER_1$ADAPTER_2 --gzip --$PHRED $input1 $input2;
+	rename _val_1.fq.gz .fastq.fq.gz *1.fq.gz;
+	rename _val_2.fq.gz .fastq.fq.gz *2.fq.gz
+	"""
+	}
+}
+
+@transform("sam")
+bwaAlign = {
+	doc title: "BWA MEM",
+	desc: """ Aligns paired-end FastQ files by lane and adds read group information""",
+	constraints: """Must have performed reference preparations.
+	Must be paired-end data.""",
+	author: "sebastian.dilorenzo@bils.se"
+
+	output.dir="aligned"
+	branch.ID = get_id(input)
+    branch.SAMPLE = get_sample(input)
+    branch.LANE = get_lane(input)
+    if(CORES=="1") {
+    	branch.THREADS = 1
+    } else {
+    	 branch.THREADS = CORES.toInteger().intdiv(LANES.toInteger()) //Used to calculate the number of cpu threads for alignment.
+    }
+    //branch.MEMORY = RAM.toInteger().intdiv(LANES.toInteger()) //Divides RAM for parallel stages, not implemented because they might as well share all the ram in any case.
+	exec "$BWA mem -M -R '@RG\\tID:${ID}\\tSM:${SAMPLE}\\tPL:$PLATFORM\\tLB:${LANE}\\tPU:None' -t ${THREADS} $REF $input1 $input2 > $output.sam"
+}
+
+@transform("bam")
+picardSort = {
+	doc title: "Picard SortSam", 
+	desc: """Sorts the aligned sam file by coordinate and outputs it in BAM format. Also computes the index of the resulting BAM file.""",
+	constraints: "None.",
+	author: "sebastian.dilorenzo@bils.se"
+
+	output.dir="sorted"
+	exec """
+	java -Xmx${RAM}g -jar $PICARD SortSam
+    INPUT=$input.sam
+    OUTPUT=$output.bam
+    SORT_ORDER=coordinate
+    VALIDATION_STRINGENCY=LENIENT
+    CREATE_INDEX=true
+    """
+}
+
+@filter("dedupped")
+picardMarkDuplicates = {
+	doc title: "Picard MarkDuplicates",
+	desc: """Remove duplicates from data.""",
+	constraints: "None.",
+	author: "sebastian.dilorenzo@bils.se"
+
+	output.dir="dedupped"
+	exec """java -Xmx${RAM}g -Djava.io.tmpdir=/scratch
+	-jar $PICARD MarkDuplicates
+	INPUT=$input.bam
+	OUTPUT=$output.bam
+	METRICS_FILE=dedupped/${SAMPLE}.${LANE}.metrics.dedup 
+	CREATE_INDEX=true 
+	VALIDATION_STRINGENCY=LENIENT
+	REMOVE_DUPLICATES=$REMOVE_DUPLICATES
+	"""
+}
+
+//GATK RealignerTargetCreator
+//phred64 adds --fix_misencoded_quality_scores, in the case that you are using phred64 data.
+gatkRealignerTargetCreator = {
+	doc title: "GATK RealignerTargetCreator",
+	desc: """Create intervals for local realignment around indels to correct mapping-related artifacts.""",
+	constraints: """Quality scoring must be phred33. If phred64: add parameter --fix_misencoded_quality_scores""",
+	author: "sebastian.dilorenzo@bils.se"
+
+	output.dir="realign"
+	exec """java -Xmx${RAM}g 
+	-jar $GATK/GenomeAnalysisTK.jar
+	-T RealignerTargetCreator
+	-R $REF
+	-I $input.bam
+	-o $output.intervals
+	$PHRED64$TARGETS_1$INDELSMILLS_1$INDELS1KG_1
+	"""
+}
+
+//GATK IndelRealigner
+//phred64 adds --fix_misencoded_quality_scores, in the case that you are using phred64 data.
+@filter("realigned")
+gatkIndelRealigner = {
+	doc title: "GATK IndelRealigner",
+	desc: """Perform local realignment around indels to correct mapping-related artifacts.""",
+	constraints: """Quality scoring must be phred33. If phred64: add parameter --fix_misencoded_quality_scores""",
+	author: "sebastian.dilorenzo@bils.se"
+
+	output.dir="realign"
+	exec """java -Xmx${RAM}g -Djava.io.tmpdir=/scratch
+	-jar $GATK/GenomeAnalysisTK.jar
+	-T IndelRealigner
+	-R $REF
+	-I $input.bam
+	-targetIntervals $input.intervals
+	-o $output.bam
+	$PHRED64$INDELSMILLS_1$INDELS1KG_1
+	"""
+}
+
+//GATK pre-recalibration table
+gatkPreBaseRecal = {
+	doc title: "GATK BaseRecalibrator Pre",
+	desc: """Recalibrate base quality scores in order to correct sequencing errors and other experimental artifacts.""",
+	constraints: "None.",
+	author: "sebastian.dilorenzo@bils.se"
+
+	output.dir="recalibration"
+	exec """java -Xmx${RAM}g 
+	-jar $GATK/GenomeAnalysisTK.jar 
+    -T BaseRecalibrator
+    -R $REF
+    -I $input.bam
+    -nct ${THREADS}
+    -o $output.prerecal
+    $DBSNP_1$TARGETS_1$INDELSMILLS_2$INDELS1KG_2
+    """
+} 
+
+//PrintReads, can be run in parallell with gatk post-recal
+@filter("recal")
+gatkPrintReads = {
+	doc title: "GATK PrintReads",
+	desc: """Apply recalibration to sequencing data.""",
+	constraints: "None.",
+	author: "sebastian.dilorenzo@bils.se"
+
+	output.dir="recalibration"
+	exec """java -Xmx${RAM}g 
+	-jar $GATK/GenomeAnalysisTK.jar 
+    -T PrintReads 
+    -R $REF
+    -I $input.bam
+    -nct ${THREADS}
+    -BQSR $input.prerecal
+    -o $output.bam 
+    """
+}
+
+//GATK post-recalibration table , can be run in parallell with printreads
+gatkPostBaseRecal = {
+	doc title: "GATK BaseRecalibrator Post",
+	desc: """Perform a second pass with BaseRecalibrator to analyze covariation remaining after recalibration """,
+	constraints: "None.",
+	author: "sebastian.dilorenzo@bils.se"
+
+	output.dir="recalibration"
+	exec """java -Xmx${RAM}g 
+	-jar $GATK/GenomeAnalysisTK.jar 
+    -T BaseRecalibrator
+    -R $REF
+    -I $input.bam
+    -nct ${THREADS}
+    -BQSR $input.prerecal
+    -o $output.postrecal
+    $DBSNP_1$TARGETS_1$INDELSMILLS_2$INDELS1KG_2
+    """
+} 
+
+//GATK AnalyzeCovariates
+gatkAnalyzeCovariates = {
+	doc title: "GATK AnalyzeCovariates",
+	desc: """Generate recalibration before and after plots.""",
+	constraints: "None.",
+	author: "sebastian.dilorenzo@bils.se"
+
+	output.dir="recalibration_plots"
+	exec """java -Xmx${RAM}g 
+	-jar $GATK/GenomeAnalysisTK.jar 
+    -T AnalyzeCovariates
+    -R $REF
+    -before $input.prerecal
+    -after $input.postrecal
+    -plots recalibration_plots/${SAMPLE}_${LANE}_plots.pdf
+    """
+}
+
+//Merge BAM files
+@filter("merge")
+picardMerge = {
+	doc title: "Picard MergeSamFiles",
+	desc: """Merge the lane BAM files into sample BAM files.""",
+	constraints: """Files must be "Already Sorted", which they should be from the Picard SortSam.""",
+	author: "sebastian.dilorenzo@bils.se"
+
+	output.dir="merge"
+	exec """
+	java -Xmx${RAM}g -Djava.io.tmpdir=/scratch
+	-jar $PICARD MergeSamFiles
+    ${inputs.bam.split().collect { "INPUT="+it }.join(' ')}
+    USE_THREADING=true 
+    VALIDATION_STRINGENCY=LENIENT 
+    AS=true 
+    CREATE_INDEX=true
+    OUTPUT=$output.bam 
+    """
+}
+
+
+//Get metrics
+metrics = {
+	doc title: "Picard CollectAlignmentSummaryMetrics",
+	desc: """Produce summary alignment metrics.""",
+	constraints: "None.",
+	author: "sebastian.dilorenzo@bils.se"
+
+	exec """
+	java -Xmx${RAM}g
+	 -jar $PICARD CollectAlignmentSummaryMetrics
+	INPUT=$input.bam
+	OUTPUT=$output.metrics
+	VALIDATION_STRINGENCY=SILENT
+	REFERENCE_SEQUENCE=$REF
+	"""
+}
+
+so_fresh_and_so_clean = {
+	doc title: "Sort output files of pipeline.",
+	desc: """Sort output files of pipeline.""",
+	constraints: """May need to be tweaked if the pipeline modules included in a run changes.
+	Has to be last module in the pipeline to complete successfully, will otherwise partially complete.""",
+	author: "sebastian.dilorenzo@bils.se"
+
+	exec """
+	mkdir -p Final_bamfile;
+	mkdir -p stats_and_metrics_files;
+	mkdir -p TrimGalore;
+	mv `\\ls -t realign/*.bam | head -1` Final_bamfile/;
+	cp *report.txt *html stats_and_metrics_files/;
+	cp dedupped/*metrics.dedup  stats_and_metrics_files/;
+	cp recalibration_plots/* stats_and_metrics_files/;
+	mv *fastq* TrimGalore
+	"""
+	succeed "Pipeline complete! See the final output bam in Final_bamfile folder. For a report on the stages of the pipeline see the report in doc folder."
+
+	//mkdir -p Final_output;
+	//mv `\\ls -t *.bam | head -1` Final_output;
+	//find -maxdepth 1 -type f -exec mv {} Temporary_files \\;;
+	//mv Temporary_files/commandlog.txt $dir;
+	//find Temporary_files/ -maxdepth 1 -type f -iname '*M-bias*' -exec mv {} Final_output \\;;
+	//find Temporary_files/ -maxdepth 1 -type f -iname '*CpG_report.txt' -exec mv {} Final_output \\;
+}
+
+//   __     __     _      ____    ___      _      _   _   _____      ____      _      _       _       ___   _   _    ____ 
+//   \ \   / /    / \    |  _ \  |_ _|    / \    | \ | | |_   _|    / ___|    / \    | |     | |     |_ _| | \ | |  / ___|
+//    \ \ / /    / _ \   | |_) |  | |    / _ \   |  \| |   | |     | |       / _ \   | |     | |      | |  |  \| | | |  _ 
+//     \ V /    / ___ \  |  _ <   | |   / ___ \  | |\  |   | |     | |___   / ___ \  | |___  | |___   | |  | |\  | | |_| |
+//      \_/    /_/   \_\ |_| \_\ |___| /_/   \_\ |_| \_|   |_|      \____| /_/   \_\ |_____| |_____| |___| |_| \_|  \____|
+//                                                                                                                        
+
+//Andreas: skulle kunna vara mycket svårt att programmera så denna funktion kommer i slutet av pipelinen eftersom den helst ska ta en tumör och en normal.
+//placeholder function for variant calling
+@transform("vcf")
+mutect2 = {
+	doc title: "Variant calling for tumor/normal samples",
+	desc: """Call variants for tumor/normal pair""",
+	constraints: """Tumor and normal""",
+	author: "Andreas"
+
+	exec """ """
+}
+
+
+//    _____  __  __  _____   ____       _        __  __    ___    ____    _   _   _       _____   ____  
+//   | ____| \ \/ / |_   _| |  _ \     / \      |  \/  |  / _ \  |  _ \  | | | | | |     | ____| / ___| 
+//   |  _|    \  /    | |   | |_) |   / _ \     | |\/| | | | | | | | | | | | | | | |     |  _|   \___ \ 
+//   | |___   /  \    | |   |  _ <   / ___ \    | |  | | | |_| | | |_| | | |_| | | |___  | |___   ___) |
+//   |_____| /_/\_\   |_|   |_| \_\ /_/   \_\   |_|  |_|  \___/  |____/   \___/  |_____| |_____| |____/ 
+//      
+
+//Generate files needed by other tools from the chosen reference fasta
+//See https://www.broadinstitute.org/gatk/guide/best-practices?bpm=DNAseq#tutorials_mapdedup2798
+//Not tested.
+ref_prep ={
+	multi "$BWA index -a bwtsw $input",
+	"$SAMTOOLS faidx $input",
+	"java -Xmx${RAM}g -jar $PICARD CreateSequenceDictionary REFERENCE=$input OUTPUT=$output.dict"
+}
+
+test ={
+	exec """echo $INDELS1KG_1 $INDELS1KG_2"""
+}
+
+//    ____    _   _   _   _ 
+//   |  _ \  | | | | | \ | |
+//   | |_) | | | | | |  \| |
+//   |  _ <  | |_| | | |\  |
+//   |_| \_\  \___/  |_| \_|
+// 
+
+
+//Complete pipeline
+run { "L00%_R*.fastq.gz" * [trimGalore + bwaAlign+ picardSort + picardMarkDuplicates + gatkRealignerTargetCreator + gatkIndelRealigner + gatkPreBaseRecal + gatkPrintReads + gatkPostBaseRecal + gatkAnalyzeCovariates] + picardMerge + picardMarkDuplicates + gatkRealignerTargetCreator + gatkIndelRealigner } //+ so_fresh_and_so_clean}
+
+//run {so_fresh_and_so_clean}
+
+//Complete pipeline sans dedupping
+//run { "L00%_val_*.fq.gz" * [trimGalore + bwaAlign + picardSort + gatkRealignerTargetCreator + gatkIndelRealigner + gatkPreBaseRecal + 
+//gatkPrintReads + gatkPostBaseRecal + gatkAnalyzeCovariates] +
+//picardMerge + gatkRealignerTargetCreator + gatkIndelRealigner + so_fresh_and_so_clean}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
