@@ -41,4 +41,4 @@ chr1    3001008 3
 ```
 
 Output is a density histogram of coverage.
-![ScreenShot](test.txt.Coverage.png)
+![ScreenShot](Coverage.png)
