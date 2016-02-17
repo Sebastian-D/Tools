@@ -470,7 +470,7 @@ test ={
 
 
 //Complete pipeline
-run { "L00%_R*.fastq.gz" * [trimGalore + bwaAlign+ picardSort + picardMarkDuplicates + gatkRealignerTargetCreator + gatkIndelRealigner + gatkPreBaseRecal + gatkPrintReads + gatkPostBaseRecal + gatkAnalyzeCovariates] + picardMerge + picardMarkDuplicates + gatkRealignerTargetCreator + gatkIndelRealigner } //+ so_fresh_and_so_clean}
+run { "L00%_R*.fastq.gz" * [trimGalore + bwaAlign+ picardSort + picardMarkDuplicates + gatkRealignerTargetCreator + gatkIndelRealigner + gatkPreBaseRecal + gatkPrintReads + gatkPostBaseRecal + gatkAnalyzeCovariates] + picardMerge + picardMarkDuplicates + gatkRealignerTargetCreator + gatkIndelRealigner + so_fresh_and_so_clean}
 
 //run {so_fresh_and_so_clean}
 
