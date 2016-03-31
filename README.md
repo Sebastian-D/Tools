@@ -11,7 +11,7 @@ For the special case of having a SAM/BAM file with a mix of paired-end and singl
 Grab the first nr of lines from a fastq.gz file so you can dryrun your pipeline/tool/method on this subset of data.
 
 #### Create_Cosmic.sh
-Create a COSMIC file from any version of their database such as exists in the GATK resource files. Useful for example when using MuTect.
+Create a COSMIC file from any version of their database such as exists in the GATK resource files. Uses any reference genomes fasta index for compatible contigs. Useful for example when using MuTect.
 
 #### mergeConvertCpGReport.r
 Merge Single-end and Paired-end aligned bismark_methylation_extractor Cytosine reports. (*.CpG_report.txt). Optional conversion to [methylKit](https://github.com/al2na/methylKit) input format.
