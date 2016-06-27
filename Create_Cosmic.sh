@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#Description: Create COSMIC file compatible as input to for example MuTect. Good for getting updated cosmic version.
+#Description: Create COSMIC file compatible as input to, for example, MuTect. Good for getting updated cosmic version.
 #Requires: CosmicCodingMuts.vcf.gz and CosmicNonCodingVariants.vcf.gz from http://cancer.sanger.ac.uk/cosmic and the reference genome useds .fai file
 
 #Commandline: sh Create_Cosmic.sh <reference genome>.fai
